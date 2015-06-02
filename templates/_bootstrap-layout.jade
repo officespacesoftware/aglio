@@ -192,6 +192,18 @@ html
                 $('table').addClass 'table'
 
         script.
+          $(function () {
+            $('.select-code-sample').change(function (e) {
+              console.log('hi')
+              $(this).parent().siblings('.request-container').hide();
+              var selected = $(this).find('option:selected').attr('value');
+
+              $('.request-container[data-lang="' + selected + '"]').show();
+            });
+            $('.request-container').hide();
+            $('.request-container[data-lang="raw"]').show();
+          });
+          /*
           $('.snippet textarea').each(function (i, textarea) {
             var mirror = CodeMirror.fromTextArea(textarea, {
               readOnly: "nocursor"
@@ -201,3 +213,4 @@ html
               mirror.refresh();
             }, 200);
           });
+          */

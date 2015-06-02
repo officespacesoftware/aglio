@@ -84,7 +84,20 @@ mixin RequestResponse(title, request, resourceGroup, resource, action)
             if request.description
                 .description!= markdown(request.description)
 
-            div.request-container
+            div(class="pull-right")
+              | Show code sample:  
+              select(class="select-code-sample")
+                option(value="raw") None
+                option(value="shell") cUrl
+                option(value="java") Java
+                option(value="javascript") Javascript
+                option(value="perl") Perl
+                option(value="php") PHP
+                option(value="ruby") Ruby
+                option(value="csharp") C#
+            div(class="clearfix")
+            hr
+            div(class="request-container", data-lang="raw")
               if Object.keys(request.headers).length
                   h5 Headers
                   pre
@@ -100,22 +113,22 @@ mixin RequestResponse(title, request, resourceGroup, resource, action)
                   h5 Schema
                   pre
                       code!= highlight(request.schema)
-              +Snippets(request, resource, action)
+            +Snippets(request, resource, action)
 
 mixin Snippets(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="shell")
       +curlSnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="java")
       +javaSnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="javascript")
       +javascriptSnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="perl")
       +perlSnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="php")
       +phpSnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="ruby")
       +rubySnippet(request, resource, action)
-    div.snippet 
+    div(class="request-container", data-lang="csharp")
       +csharpSnippet(request, resource, action)
 
 mixin curlSnippet(request, resource, action)
