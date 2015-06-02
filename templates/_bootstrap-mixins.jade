@@ -154,7 +154,7 @@ mixin javaSnippet(request, resource, action)
         |  .request(MediaType.TEXT_PLAIN_TYPE)&#10;
 
         each header in request.headers
-          |  .header("#{header.name}", "#{header.value}")&#10;
+          |  .header("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}")&#10;
 
         |  .#{action.method.toLowerCase()}();&#10;
 
@@ -166,9 +166,9 @@ mixin javascriptSnippet(request, resource, action)
     pre
       textarea
         |  var xhr = new XMLHttpRequest();
-        |  xhr.open("GET", "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
+        |  xhr.open("#{action.method}", "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
         each header in request.headers
-          | .xhr.setRequestHeader("#{header.name}", "#{header.value}");&#10;
+          | .xhr.setRequestHeader("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
         |  xhr.onreadystatechange = function () {
         |    if (this.readyState == 4) {
         |      alert('Status: '+this.status+'\nHeaders: '+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);
@@ -183,9 +183,9 @@ mixin perlSnippet(request, resource, action)
 
         |  my $ua = LWP::UserAgent->new;&#10;
         each header in request.headers
-          |  $ua->default_header(#{header.name.toLowerCase()} => "#{header.value}");&#10;
+          |  $ua->default_header(#{header.name.toLowerCase()} => "#{header.value.replace(/"/g, "\\\"")}");&#10;
 
-        |  my $response = $ua->get("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
+        |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
 
         |  print $response->as_string;
 
@@ -196,9 +196,10 @@ mixin phpSnippet(request, resource, action)
         |  $ch = curl_init();
         |  curl_setopt($ch, CURLOPT_URL, "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
         |  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        |  curl_setopt($ch, CURLOPT_HEADER, FALSE);&#10;
+        |  curl_setopt($ch, CURLOPT_HEADER, FALSE);
+        |  curl_setopt($ch, CURLOPT_#{action.method}, TRUE);&#10;
         each header in request.headers
-          |  curl_setopt($ch, CURLOPT_HTTPHEADER, array("#{header.name}: #{header.value}", "#{header.name}: #{header.value}"));&#10;
+          |  curl_setopt($ch, CURLOPT_HTTPHEADER, array("#{header.name}: #{header.value.replace(/"/g, "\\\"")}", "#{header.name}: #{header.value.replace(/"/g, "\\\"")}"));&#10;
         |  $response = curl_exec($ch);
         |  curl_close($ch);
         |  
@@ -211,7 +212,7 @@ mixin rubySnippet(request, resource, action)
         |  require 'rest_client'
 
         |  headers  = {:content_type => "application/json; charset=utf-8",:authorization => "Token token=\"<YOUR APIKEY>\""}
-        |  response = RestClient.get "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers
+        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers
         |  puts response
 
 mixin csharpSnippet(request, resource, action)
@@ -227,10 +228,10 @@ mixin csharpSnippet(request, resource, action)
         |  var baseAddress = new Uri("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>");
 
         |  using (var httpClient = new HttpClient{ BaseAddress = baseAddress })
-        |  {
-        |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("content_type", "application/json; charset=utf-8");
-        |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("authorization", "Token token="<YOUR APIKEY>"");
-        |     using(var response = await httpClient.GetAsync("{resource.uriTemplate}"))
+        |  {&#10;
+        each header in request.headers
+          |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("#{header.name.toLowerCase()}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
+        |     using(var response = await httpClient.#{action.method[0].toUpperCase() + action.method.slice(1).toLowerCase()}Async("#{resource.uriTemplate}"))
         |     {
         |       string responseData = await response.Content.ReadAsStringAsync();
         |     }
