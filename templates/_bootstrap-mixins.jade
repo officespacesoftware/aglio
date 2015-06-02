@@ -84,22 +84,104 @@ mixin RequestResponse(title, request, resourceGroup, resource, action)
             if request.description
                 .description!= markdown(request.description)
 
-            if Object.keys(request.headers).length
-                h5 Headers
-                pre
-                    code
-                        each item in request.headers
-                            != highlight(item.name + ': ' + item.value, 'http')
-                            br
-            if request.body
-                h5 Body
-                pre
-                    code!= highlight(request.body)
-            if request.schema
-                h5 Schema
-                pre
-                    code!= highlight(request.schema)
+            div.request-container
+              if Object.keys(request.headers).length
+                  h5 Headers
+                  pre
+                      code
+                          each item in request.headers
+                              != highlight(item.name + ': ' + item.value, 'http')
+                              br
+              if request.body
+                  h5 Body
+                  pre
+                      code!= highlight(request.body)
+              if request.schema
+                  h5 Schema
+                  pre
+                      code!= highlight(request.schema)
+              +Snippets(request, resource)
 
+mixin Snippets(request, resource)
+    div.snippet 
+      +curlSnippet(request, resource)
+    div.snippet 
+      +javaSnippet()
+    div.snippet 
+      +javascriptSnippet()
+    div.snippet 
+      +nodeSnippet()
+    div.snippet 
+      +perlSnippet()
+    div.snippet 
+      +pythonSnippet()
+    div.snippet 
+      +phpSnippet()
+    div.snippet 
+      +rubySnippet()
+    div.snippet 
+      +goSnippet()
+    div.snippet 
+      +csharpSnippet()
+    div.snippet 
+      +visualBasicSnippet()
+    div.snippet 
+      +groovySnippet()
+    div.snippet 
+      +objectiveCSnippet()
+    div.snippet 
+      +swiftSnippet()
+
+mixin curlSnippet(request, resource)
+    pre
+      textarea(rows=6)
+        | curl --include \&#10;
+        each header in request.headers
+          | --header '#{header.name}: #{header.value}' \ &#10;
+        | http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}
+
+mixin javaSnippet()
+  code
+    p java
+
+mixin javascriptSnippet()
+  code
+    p javascript
+
+mixin nodeSnippet()
+  code
+    p node
+
+mixin perlSnippet()
+  code
+    p perl
+
+mixin pythonSnippet()
+    p python
+
+mixin phpSnippet()
+    p php
+
+mixin rubySnippet()
+    p ruby
+
+mixin goSnippet()
+    p go
+
+mixin csharpSnippet()
+    p csharp
+
+mixin visualBasicSnippet()
+    p visual baisc
+
+mixin groovySnippet()
+    p groovy
+
+mixin objectiveCSnippet()
+    p objective c
+
+mixin swiftSnippet()
+    p swift
 
 mixin Examples(resourceGroup, resource, action)
     ul.list-group
