@@ -125,6 +125,8 @@ mixin curlSnippet(request, resource, action)
         |   --request #{action.method} \&#10;
         each header in request.headers
           |   --header '#{header.name}: #{header.value}' \ &#10;
+        if request.body
+          |  --data-binary '#{request.body.replace(/(\r\n|\n|\r)/gm,"")}'
         |   http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}
 
 mixin javaSnippet(request, resource, action)
@@ -148,6 +150,9 @@ mixin javaSnippet(request, resource, action)
         |  import javax.ws.rs.core.MediaType; &#10;
 
         |  Client client = ClientBuilder.newClient(); &#10;
+
+        if request.body
+          |  Entity<String> payload = Entity.text("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
 
         |  Response response = client.target("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>")
         |  .path("#{resource.uriTemplate}")
@@ -174,7 +179,10 @@ mixin javascriptSnippet(request, resource, action)
         |      alert('Status: '+this.status+'\nHeaders: '+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);
         |    }
         |  };
-        |  xhr.send(null);
+        if request.body
+          | xhr.send("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
+        else
+          |  xhr.send(null);
 
 mixin perlSnippet(request, resource, action)
     pre
@@ -185,7 +193,11 @@ mixin perlSnippet(request, resource, action)
         each header in request.headers
           |  $ua->default_header(#{header.name.toLowerCase()} => "#{header.value.replace(/"/g, "\\\"")}");&#10;
 
-        |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
+        if request.body
+          |  $data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}";
+          |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", Content => $data);&#10;
+        else
+          |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
 
         |  print $response->as_string;
 
@@ -196,8 +208,15 @@ mixin phpSnippet(request, resource, action)
         |  $ch = curl_init();
         |  curl_setopt($ch, CURLOPT_URL, "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
         |  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        |  curl_setopt($ch, CURLOPT_HEADER, FALSE);
-        |  curl_setopt($ch, CURLOPT_#{action.method}, TRUE);&#10;
+        |  curl_setopt($ch, CURLOPT_HEADER, FALSE);&#10;
+        if action.method == 'POST'
+          |  curl_setopt($ch, CURLOPT_#{action.method}, TRUE);&#10;
+        if action.method == 'PUT'
+          |  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");&#10;
+        if action.method == 'DELETE'
+          | curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");&#10;
+        if request.body
+          |  curl_setopt($ch, CURLOPT_POSTFIELDS, "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
         each header in request.headers
           |  curl_setopt($ch, CURLOPT_HTTPHEADER, array("#{header.name}: #{header.value.replace(/"/g, "\\\"")}", "#{header.name}: #{header.value.replace(/"/g, "\\\"")}"));&#10;
         |  $response = curl_exec($ch);
@@ -211,8 +230,12 @@ mixin rubySnippet(request, resource, action)
         |  require 'rubygems' if RUBY_VERSION < '1.9'
         |  require 'rest_client'
 
-        |  headers  = {:content_type => "application/json; charset=utf-8",:authorization => "Token token=\"<YOUR APIKEY>\""}
-        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers
+        |  headers  = {:content_type => "application/json; charset=utf-8",:authorization => "Token token=\"<YOUR APIKEY>\""}&#10;
+        if request.body
+          |  data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}"&#10;
+          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headers
+        else
+          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers
         |  puts response
 
 mixin csharpSnippet(request, resource, action)
@@ -231,11 +254,15 @@ mixin csharpSnippet(request, resource, action)
         |  {&#10;
         each header in request.headers
           |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("#{header.name.toLowerCase()}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
+        if request.body
+          | using(var content = new StringContent("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}")) {
         |     using(var response = await httpClient.#{action.method[0].toUpperCase() + action.method.slice(1).toLowerCase()}Async("#{resource.uriTemplate}"))
         |     {
         |       string responseData = await response.Content.ReadAsStringAsync();
         |     }
         |  }
+        if request.body
+          |  }
 
 
 mixin Examples(resourceGroup, resource, action)
