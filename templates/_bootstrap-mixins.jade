@@ -218,7 +218,7 @@ mixin phpSnippet(request, resource, action)
         if request.body
           |  curl_setopt($ch, CURLOPT_POSTFIELDS, "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
         each header in request.headers
-          |  curl_setopt($ch, CURLOPT_HTTPHEADER, array("#{header.name}: #{header.value.replace(/"/g, "\\\"")}", "#{header.name}: #{header.value.replace(/"/g, "\\\"")}"));&#10;
+          |  curl_setopt($ch, CURLOPT_HTTPHEADER, array(#{request.headers.map(function (header) { return "\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")));&#10;
         |  $response = curl_exec($ch);
         |  curl_close($ch);
         |  
@@ -230,12 +230,12 @@ mixin rubySnippet(request, resource, action)
         |  require 'rubygems' if RUBY_VERSION < '1.9'
         |  require 'rest_client'
 
-        |  headers  = {:content_type => "application/json; charset=utf-8",:authorization => "Token token=\"<YOUR APIKEY>\""}&#10;
+        |  headers = { #{request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \"" + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")} } &#10;
         if request.body
           |  data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}"&#10;
-          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headers
+          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headerss&#10;
         else
-          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers
+          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers&#10;
         |  puts response
 
 mixin csharpSnippet(request, resource, action)
