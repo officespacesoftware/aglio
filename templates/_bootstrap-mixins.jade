@@ -120,149 +120,156 @@ mixin Snippets(request, resource, action)
 
 mixin curlSnippet(request, resource, action)
     pre
-      textarea
-        | curl --include
-        |   --request #{action.method} \&#10;
-        each header in request.headers
-          |   --header '#{header.name}: #{header.value}' \ &#10;
-        if request.body
-          |  --data-binary '#{request.body.replace(/(\r\n|\n|\r)/gm,"")}'
-        |   http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}
+      | highlight_code(:shell) do
+      | curl --include
+      |   --request #{action.method} \&#10;
+      each header in request.headers
+        |   --header '#{header.name}: #{header.value}' \ &#10;
+      if request.body
+        |  --data-binary '#{request.body.replace(/(\r\n|\n|\r)/gm,"")}'
+      |  http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}
+      |  end
 
 mixin javaSnippet(request, resource, action)
     pre
-      textarea
-        |  // Maven : Add these dependecies to your pom.xml (java6+)
-        |  // <dependency>
-        |  //     <groupId>org.glassfish.jersey.core</groupId>
-        |  //     <artifactId>jersey-client</artifactId>
-        |  //     <version>2.8</version>
-        |  // </dependency>
-        |  // <dependency>
-        |  //     <groupId>org.glassfish.jersey.media</groupId>
-        |  //     <artifactId>jersey-media-json-jackson</artifactId>
-        |  //     <version>2.8</version>
-        |  // </dependency> &#10;
-        |  import javax.ws.rs.client.Client;
-        |  import javax.ws.rs.client.ClientBuilder;
-        |  import javax.ws.rs.client.Entity;
-        |  import javax.ws.rs.core.Response;
-        |  import javax.ws.rs.core.MediaType; &#10;
+      | highlight_code(:java) do
+      |  // Maven : Add these dependecies to your pom.xml (java6+)
+      |  // <dependency>
+      |  //     <groupId>org.glassfish.jersey.core</groupId>
+      |  //     <artifactId>jersey-client</artifactId>
+      |  //     <version>2.8</version>
+      |  // </dependency>
+      |  // <dependency>
+      |  //     <groupId>org.glassfish.jersey.media</groupId>
+      |  //     <artifactId>jersey-media-json-jackson</artifactId>
+      |  //     <version>2.8</version>
+      |  // </dependency> &#10;
+      |  import javax.ws.rs.client.Client;
+      |  import javax.ws.rs.client.ClientBuilder;
+      |  import javax.ws.rs.client.Entity;
+      |  import javax.ws.rs.core.Response;
+      |  import javax.ws.rs.core.MediaType; &#10;
 
-        |  Client client = ClientBuilder.newClient(); &#10;
+      |  Client client = ClientBuilder.newClient(); &#10;
 
-        if request.body
-          |  Entity<String> payload = Entity.text("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
+      if request.body
+        |  Entity<String> payload = Entity.text("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
 
-        |  Response response = client.target("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>")
-        |  .path("#{resource.uriTemplate}")
-        |  .request(MediaType.TEXT_PLAIN_TYPE)&#10;
+      |  Response response = client.target("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>")
+      |  .path("#{resource.uriTemplate}")
+      |  .request(MediaType.TEXT_PLAIN_TYPE)&#10;
 
-        each header in request.headers
-          |  .header("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}")&#10;
+      each header in request.headers
+        |  .header("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}")&#10;
 
-        |  .#{action.method.toLowerCase()}();&#10;
+      |  .#{action.method.toLowerCase()}();&#10;
 
-        |  System.out.println("status: " + response.getStatus());
-        |  System.out.println("headers: " + response.getHeaders());
-        |  System.out.println("body:" + response.readEntity(String.class));
+      |  System.out.println("status: " + response.getStatus());
+      |  System.out.println("headers: " + response.getHeaders());
+      |  System.out.println("body:" + response.readEntity(String.class));
+      |  end
 
 mixin javascriptSnippet(request, resource, action)
     pre
-      textarea
-        |  var xhr = new XMLHttpRequest();
-        |  xhr.open("#{action.method}", "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
-        each header in request.headers
-          | .xhr.setRequestHeader("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
-        |  xhr.onreadystatechange = function () {
-        |    if (this.readyState == 4) {
-        |      alert('Status: '+this.status+'\nHeaders: '+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);
-        |    }
-        |  };
-        if request.body
-          | xhr.send("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
-        else
-          |  xhr.send(null);
+      | highlight_code(:javascript) do
+      |  var xhr = new XMLHttpRequest();
+      |  xhr.open("#{action.method}", "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
+      each header in request.headers
+        | .xhr.setRequestHeader("#{header.name}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
+      |  xhr.onreadystatechange = function () {
+      |    if (this.readyState == 4) {
+      |      alert('Status: '+this.status+'\nHeaders: '+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);
+      |    }
+      |  };
+      if request.body
+        | xhr.send("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
+      else
+        |  xhr.send(null);
+      | end
 
 mixin perlSnippet(request, resource, action)
     pre
-      textarea
-        |  require LWP::UserAgent;
+      | highlight_code(:perl) do
+      |  require LWP::UserAgent;
 
-        |  my $ua = LWP::UserAgent->new;&#10;
-        each header in request.headers
-          |  $ua->default_header(#{header.name.toLowerCase()} => "#{header.value.replace(/"/g, "\\\"")}");&#10;
+      |  my $ua = LWP::UserAgent->new;&#10;
+      each header in request.headers
+        |  $ua->default_header(#{header.name.toLowerCase()} => "#{header.value.replace(/"/g, "\\\"")}");&#10;
 
-        if request.body
-          |  $data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}";
-          |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", Content => $data);&#10;
-        else
-          |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
+      if request.body
+        |  $data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}";
+        |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", Content => $data);&#10;
+      else
+        |  my $response = $ua->#{action.method.toLowerCase()}("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");&#10;
 
-        |  print $response->as_string;
+      |  print $response->as_string;
+      |  end
 
 mixin phpSnippet(request, resource, action)
     pre
-      textarea
-        |  <?php
-        |  $ch = curl_init();
-        |  curl_setopt($ch, CURLOPT_URL, "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
-        |  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        |  curl_setopt($ch, CURLOPT_HEADER, FALSE);&#10;
-        if action.method == 'POST'
-          |  curl_setopt($ch, CURLOPT_#{action.method}, TRUE);&#10;
-        if action.method == 'PUT'
-          |  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");&#10;
-        if action.method == 'DELETE'
-          | curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");&#10;
-        if request.body
-          |  curl_setopt($ch, CURLOPT_POSTFIELDS, "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
-        each header in request.headers
-          |  curl_setopt($ch, CURLOPT_HTTPHEADER, array(#{request.headers.map(function (header) { return "\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")));&#10;
-        |  $response = curl_exec($ch);
-        |  curl_close($ch);
-        |  
-        |  var_dump($response);
+      | highlight_code(:php) do
+      |  <?php
+      |  $ch = curl_init();
+      |  curl_setopt($ch, CURLOPT_URL, "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}");
+      |  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+      |  curl_setopt($ch, CURLOPT_HEADER, FALSE);&#10;
+      if action.method == 'POST'
+        |  curl_setopt($ch, CURLOPT_#{action.method}, TRUE);&#10;
+      if action.method == 'PUT'
+        |  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");&#10;
+      if action.method == 'DELETE'
+        | curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");&#10;
+      if request.body
+        |  curl_setopt($ch, CURLOPT_POSTFIELDS, "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}");
+      each header in request.headers
+        |  curl_setopt($ch, CURLOPT_HTTPHEADER, array(#{request.headers.map(function (header) { return "\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")));&#10;
+      |  $response = curl_exec($ch);
+      |  curl_close($ch);
+      |  
+      |  var_dump($response);
+      |  end
 
 mixin rubySnippet(request, resource, action)
     pre
-      textarea
-        |  require 'rubygems' if RUBY_VERSION < '1.9'
-        |  require 'rest_client'
+      | highlight_code(:ruby) do
+      |  require 'rubygems' if RUBY_VERSION < '1.9'
+      |  require 'rest_client'
 
-        |  headers = { #{request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \"" + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")} } &#10;
-        if request.body
-          |  data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}"&#10;
-          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headerss&#10;
-        else
-          |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers&#10;
-        |  puts response
+      |  headers = { #{request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \"" + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")} } &#10;
+      if request.body
+        |  data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}"&#10;
+        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headerss&#10;
+      else
+        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers&#10;
+      |  puts response
+      |  end
 
 mixin csharpSnippet(request, resource, action)
     pre
-      textarea
-        |  //Common testing requirement. If you are consuming an API in a sandbox/test region, uncomment this line of code ONLY for non production uses.
-        |  //System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+      | highlight_code(:c) do
+      |  //Common testing requirement. If you are consuming an API in a sandbox/test region, uncomment this line of code ONLY for non production uses.
+      |  //System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
-        |  //Be sure to run "Install-Package Microsoft.Net.Http" from your nuget command line.
-        |  using System;
-        |  using System.Net.Http;
+      |  //Be sure to run "Install-Package Microsoft.Net.Http" from your nuget command line.
+      |  using System;
+      |  using System.Net.Http;
 
-        |  var baseAddress = new Uri("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>");
+      |  var baseAddress = new Uri("http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>");
 
-        |  using (var httpClient = new HttpClient{ BaseAddress = baseAddress })
-        |  {&#10;
-        each header in request.headers
-          |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("#{header.name.toLowerCase()}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
-        if request.body
-          | using(var content = new StringContent("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}")) {
-        |     using(var response = await httpClient.#{action.method[0].toUpperCase() + action.method.slice(1).toLowerCase()}Async("#{resource.uriTemplate}"))
-        |     {
-        |       string responseData = await response.Content.ReadAsStringAsync();
-        |     }
+      |  using (var httpClient = new HttpClient{ BaseAddress = baseAddress })
+      |  {&#10;
+      each header in request.headers
+        |     httpClient.DefaultRequestHeaders.TryAddWithoutValidation("#{header.name.toLowerCase()}", "#{header.value.replace(/"/g, "\\\"")}");&#10;
+      if request.body
+        | using(var content = new StringContent("#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}")) {
+      |     using(var response = await httpClient.#{action.method[0].toUpperCase() + action.method.slice(1).toLowerCase()}Async("#{resource.uriTemplate}"))
+      |     {
+      |       string responseData = await response.Content.ReadAsStringAsync();
+      |     }
+      |  }
+      if request.body
         |  }
-        if request.body
-          |  }
+      |  end
 
 
 mixin Examples(resourceGroup, resource, action)
