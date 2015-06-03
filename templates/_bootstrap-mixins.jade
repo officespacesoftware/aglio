@@ -132,16 +132,15 @@ mixin Snippets(request, resource, action)
       +csharpSnippet(request, resource, action)
 
 mixin curlSnippet(request, resource, action)
-    pre
-      | highlight_code(:shell) do
-      | curl --include
-      |   --request #{action.method} \&#10;
-      each header in request.headers
-        |   --header '#{header.name}: #{header.value}' \ &#10;
-      if request.body
-        |  --data-binary '#{request.body.replace(/(\r\n|\n|\r)/gm,"")}'
-      |  http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}
-      |  end
+  - var code = "curl --include \\ \n"
+  - code += "--request " + action.method + "\\ \n"
+  each header in request.headers
+    - code += "--header \\\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\\\" \\ \n"
+  if request.body
+    - code += "--data-binary \\\"" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\\\" \\ \n"
+  - code += "http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate
+
+  div <%= raw(raw(CodeRay.scan("!{code}", :shell).div)) %>
 
 mixin javaSnippet(request, resource, action)
     pre
@@ -232,19 +231,17 @@ mixin phpSnippet(request, resource, action)
       |  end
 
 mixin rubySnippet(request, resource, action)
-    pre
-      | highlight_code(:ruby) do
-      |  require 'rubygems' if RUBY_VERSION < '1.9'
-      |  require 'rest_client'
+  - var code = "require 'rubygems' if RUBY_VERSION < '1.9'\n"
+  - code += "require 'rest_client'\n"
+  - code += "headers = { " + request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \"" + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ") + " }\n"
+  if request.body
+    - code += "data = " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\n"
+    - code += "response = RestClient." + action.method.toLowerCase() + "('http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate + "', data, headers\n"
+  else
+    - code += "response = RestClient." + action.method.toLowerCase() + "('http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" +resource.uriTemplate + "', headers\n"
+  - code += "puts response\n"
 
-      |  headers = { #{request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \"" + header.value.replace(/"/g, "\\\"") + "\""; }).join(", ")} } &#10;
-      if request.body
-        |  data = "#{request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"")}"&#10;
-        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", data, headerss&#10;
-      else
-        |  response = RestClient.#{action.method.toLowerCase()} "http<%= request.ssl? ? 's' : '' %>://<%= request.host_with_port %>#{resource.uriTemplate}", headers&#10;
-      |  puts response
-      |  end
+  div <%= raw(CodeRay.scan("#{code}", :ruby).div(line_numbers: :table)) %>
 
 mixin csharpSnippet(request, resource, action)
     pre
