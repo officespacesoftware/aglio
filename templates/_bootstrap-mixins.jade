@@ -140,7 +140,7 @@ mixin curlSnippet(request, resource, action)
   each header in request.headers
     - code += "--header \\\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\\\" \\\\ \n"
   if request.body
-    - code += "--data-binary \\\"" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\\\" \\\\ \n"
+    - code += "--data-binary '" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "' \\\\ \n"
   - code += "http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate
 
   div <%= raw(raw(CodeRay.scan("!{code}", :ruby).div)) %>
@@ -155,7 +155,7 @@ mixin javaSnippet(request, resource, action)
   - code += ".path(\\\"" + resource.uriTemplate + "\\\")\n"
   - code += ".request(MediaType.TEXT_PLAIN_TYPE)\n"
   each header in request.headers
-    - code += ".header(" + header.name + ", \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\")\n"
+    - code += ".header(\\\"" + header.name + "\\\", \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\")\n"
   - code += "." + action.method.toLowerCase() + "();\n\n"
   - code +=  "System.out.println(\\\"status: \\\" + response.getStatus());\n"
   - code +=  "System.out.println(\\\"headers: \\\" + response.getHeaders());\n"
@@ -167,7 +167,7 @@ mixin javascriptSnippet(request, resource, action)
   - var code = "var xhr = new XMLHttpRequest();\n"
   - code += "xhr.open(\\\"" + action.method + ", http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + "\\\")\n"
   each header in request.headers
-    - code += ".xhr.setRequestHeader(\\\"" + header.name + ", " + header.value.replace(/"/g, "\\\"") + "\\\");\n"
+    - code += ".xhr.setRequestHeader(\\\"" + header.name + ", " + header.value.replace(/"/g, "\\\\\\\"") + "\\\");\n"
   - code += "\n"
   - code += "xhr.onreadystatechange = function () {\n"
   - code += "  if (this.readyState == 4) {\n"
@@ -186,7 +186,7 @@ mixin perlSnippet(request, resource, action)
 
   - code +="my $ua = LWP::UserAgent->new;\n"
   each header in request.headers
-    - code +="$ua->default_header(\\\"" + header.name.toLowerCase() + "\\\" => \\\"" + header.value.replace(/"/g, "\\\"") +"\\\");\n"
+    - code +="$ua->default_header(\\\"" + header.name.toLowerCase() + "\\\" => \\\"" + header.value.replace(/"/g, "\\\\\\\"") +"\\\");\n"
 
   if request.body
     - code += "$data = " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ";\n"
@@ -212,7 +212,7 @@ mixin phpSnippet(request, resource, action)
     - code += "curl_setopt($ch, CURLOPT_CUSTOMREQUEST, \\\"DELETE\\\");\n"
   if request.body
     - code += "curl_setopt($ch, CURLOPT_POSTFIELDS, " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ");\n"
-  - code += "curl_setopt($ch, CURLOPT_HTTPHEADER, array(" + request.headers.map(function (header) { return "\\\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\\\""; }).join(", ") + "\\));\n"
+  - code += "curl_setopt($ch, CURLOPT_HTTPHEADER, array(" + request.headers.map(function (header) { return "\\\"" + header.name + ": " + header.value.replace(/"/g, "\\\\\\\"") + "\\\""; }).join(", ") + "\\));\n"
   - code += "$response = curl_exec($ch);\n"
   - code += "curl_close($ch);\n"
   - code += "var_dump($response);\n"
@@ -222,7 +222,7 @@ mixin phpSnippet(request, resource, action)
 mixin rubySnippet(request, resource, action)
   - var code = "require 'rubygems' if RUBY_VERSION < '1.9'\n"
   - code += "require 'rest_client'\n"
-  - code += "headers = { " + request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \\\"" + header.value.replace(/"/g, "\\\"") + "\\\""; }).join(", ") + " }\n"
+  - code += "headers = { " + request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\""; }).join(", ") + " }\n"
   if request.body
     - code += "data = " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\n"
     - code += "response = RestClient." + action.method.toLowerCase() + "('http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate + "', data, headers\n"
@@ -239,10 +239,10 @@ mixin csharpSnippet(request, resource, action)
   - code += "using (var httpClient = new HttpClient{ BaseAddress = baseAddress })\n"
   - code += "{\n"
   each header in request.headers
-    - code += "httpClient.DefaultRequestHeaders.TryAddWithoutValidation(\\\"" + header.name.toLowerCase() + "\\\", \\\"" + header.value.replace(/"/g, "\\\"") + "\\\");\n"
+    - code += "httpClient.DefaultRequestHeaders.TryAddWithoutValidation(\\\"" + header.name.toLowerCase() + "\\\", \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\");\n"
   if request.body
     - code += "using(var content = new StringContent(" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ")) {\n"
-    - code += "  using(var response = await httpClient." + action.method[0].toUpperCase() + action.method.slice(1).toLowerCase() + "Async(" + resource.uriTemplate + "))\n"
+    - code += "  using(var response = await httpClient." + action.method[0].toUpperCase() + action.method.slice(1).toLowerCase() + "Async(\\\"" + resource.uriTemplate + "\\\"))\n"
     - code += "   {\n"
     - code += "     string responseData = await response.Content.ReadAsStringAsync();\n"
     - code += "   }\n"
