@@ -134,12 +134,12 @@ mixin Snippets(request, resource, action)
       +csharpSnippet(request, resource, action)
 
 mixin curlSnippet(request, resource, action)
-  - var code = "curl --include \\ \n"
-  - code += "--request " + action.method + "\\ \n"
+  - var code = "curl --include \\\\ \n"
+  - code += "--request " + action.method + " \\\\ \n"
   each header in request.headers
-    - code += "--header \\\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\\\" \\ \n"
+    - code += "--header \\\"" + header.name + ": " + header.value.replace(/"/g, "\\\"") + "\\\" \\\\ \n"
   if request.body
-    - code += "--data-binary \\\"" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\\\" \\ \n"
+    - code += "--data-binary \\\"" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\\\" \\\\ \n"
   - code += "http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate
 
   div <%= raw(raw(CodeRay.scan("!{code}", :ruby).div)) %>
@@ -151,10 +151,10 @@ mixin javaSnippet(request, resource, action)
     - code += "Entity<String> payload = Entity.text(" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ");\n"
 
   - code += "Response response = client.target(\\\"http#{request.ssl? ? 's' : ''}://#{request.host_with_port}\\\")\n"
-  - code += ".path(" + resource.uriTemplate + ")\n"
+  - code += ".path(\\\"" + resource.uriTemplate + "\\\")\n"
   - code += ".request(MediaType.TEXT_PLAIN_TYPE)\n"
   each header in request.headers
-    - code += ".header(" + header.name + ", \\\"" + header.value.replace(/"/g, "\\\"") + "\\\")\n"
+    - code += ".header(" + header.name + ", \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\")\n"
   - code += "." + action.method.toLowerCase() + "();\n\n"
   - code +=  "System.out.println(\\\"status: \\\" + response.getStatus());\n"
   - code +=  "System.out.println(\\\"headers: \\\" + response.getHeaders());\n"
@@ -164,9 +164,10 @@ mixin javaSnippet(request, resource, action)
 
 mixin javascriptSnippet(request, resource, action)
   - var code = "var xhr = new XMLHttpRequest();\n"
-  - code += "xhr.open(" + action.method + ", http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + ")\n"
+  - code += "xhr.open(\\\"" + action.method + ", http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + "\\\")\n"
   each header in request.headers
     - code += ".xhr.setRequestHeader(\\\"" + header.name + ", " + header.value.replace(/"/g, "\\\"") + "\\\");\n"
+  - code += "\n"
   - code += "xhr.onreadystatechange = function () {\n"
   - code += "  if (this.readyState == 4) {\n"
   - code += "    alert('Status: '+this.status+'\nHeaders: '+JSON.stringify(this.getAllResponseHeaders())+'\nBody: '+this.responseText);\n"
@@ -190,7 +191,7 @@ mixin perlSnippet(request, resource, action)
     - code += "$data = " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ";\n"
     - code += "my $response = $ua->" + action.method.toLowerCase() + "(\\\"http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate + "\\\", Content => $data);\n"
   else
-    - code += "my $response = $ua->" + action.method.toLowerCase() + "(http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + ");\n"
+    - code += "my $response = $ua->" + action.method.toLowerCase() + "(\\\"http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + "\\\");\n"
 
   - code += "print $response->as_string;\n"
 
@@ -199,7 +200,7 @@ mixin perlSnippet(request, resource, action)
 mixin phpSnippet(request, resource, action)
   - var code = "<?php\n"
   - code += "$ch = curl_init();\n"
-  - code += "curl_setopt($ch, CURLOPT_URL, http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + ");\n"
+  - code += "curl_setopt($ch, CURLOPT_URL, \\\"http#{request.ssl? ? 's' : '' }://#{request.host_with_port}" + resource.uriTemplate + "\\\");\n"
   - code += "curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);\n"
   - code += "curl_setopt($ch, CURLOPT_HEADER, FALSE);\n"
   if action.method == 'POST'
@@ -233,11 +234,11 @@ mixin rubySnippet(request, resource, action)
 mixin csharpSnippet(request, resource, action)
   - var code = "using System;\n"
   - code += "using System.Net.Http;\n"
-  - code += "var baseAddress = new Uri(http#{request.ssl? ? 's' : '' }://#{request.host_with_port});\n"
+  - code += "var baseAddress = new Uri(\\\"http#{request.ssl? ? 's' : '' }://#{request.host_with_port}\\\");\n"
   - code += "using (var httpClient = new HttpClient{ BaseAddress = baseAddress })\n"
   - code += "{\n"
   each header in request.headers
-    - code += "httpClient.DefaultRequestHeaders.TryAddWithoutValidation(" + header.name.toLowerCase() + ", " + header.value.replace(/"/g, "\\\"") + ");\n"
+    - code += "httpClient.DefaultRequestHeaders.TryAddWithoutValidation(\\\"" + header.name.toLowerCase() + "\\\", \\\"" + header.value.replace(/"/g, "\\\"") + "\\\");\n"
   if request.body
     - code += "using(var content = new StringContent(" + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + ")) {\n"
     - code += "  using(var response = await httpClient." + action.method[0].toUpperCase() + action.method.slice(1).toLowerCase() + "Async(" + resource.uriTemplate + "))\n"
