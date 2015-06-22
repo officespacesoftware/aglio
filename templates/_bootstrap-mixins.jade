@@ -222,7 +222,7 @@ mixin phpSnippet(request, resource, action)
 mixin rubySnippet(request, resource, action)
   - var code = "require 'rubygems' if RUBY_VERSION < '1.9'\n"
   - code += "require 'rest_client'\n"
-  - code += "headers = { " + request.headers.map(function (header) { return ":" + header.name.toLowerCase() + " => \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\""; }).join(", ") + " }\n"
+  - code += "headers = { " + request.headers.map(function (header) { return "\\\"" + header.name.toLowerCase() + "\\\" => \\\"" + header.value.replace(/"/g, "\\\\\\\"") + "\\\""; }).join(", ") + " }\n"
   if request.body
     - code += "data = " + request.body.replace(/"/g, "\\\"").replace(/(\r\n|\n|\r)/gm,"") + "\n"
     - code += "response = RestClient." + action.method.toLowerCase() + "('http#{request.ssl? ? 's' : ''}://#{request.host_with_port}" + resource.uriTemplate + "', data, headers\n"
