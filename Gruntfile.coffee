@@ -52,14 +52,15 @@ module.exports = (grunt) ->
 
         aglio = require './lib/main'
 
-        render = (template, done) ->
-            console.log "Generating examples/#{template}.html"
-            aglio.renderFile 'example.md', "examples/#{template}.html", template, (err) ->
+        render = (name, done) ->
+            console.log "Generating examples/#{name}.html"
+            aglio.renderFile 'example.apib', "examples/#{name}.html", themeVariables: name, (err) ->
                 if err then return done(err)
-                done()
+                console.log "Generating examples/#{name}-triple.html"
+                aglio.renderFile 'example.apib', "examples/#{name}-triple.html", themeVariables: name, themeTemplate: 'triple', (err) ->
+                    done(err)
 
-        aglio.getTemplates (err, templates) ->
-            async.each templates, render, done
+        async.each ['default', 'flatly', 'slate', 'cyborg', 'streak'], render, done
 
 
     grunt.registerTask 'compile', ['coffeelint', 'coffee']

@@ -3,42 +3,28 @@ assert = require 'assert'
 bin = require '../lib/bin'
 fs = require 'fs'
 http = require 'http'
-jade = require 'jade'
 path = require 'path'
 protagonist = require 'protagonist'
 sinon = require 'sinon'
 
 root = path.dirname(__dirname)
 
-blueprint = fs.readFileSync path.join(root, 'example.md'), 'utf-8'
+blueprint = fs.readFileSync path.join(root, 'example.apib'), 'utf-8'
 
 describe 'API Blueprint Renderer', ->
-    it 'Should get a list of templates', (done) ->
-        aglio.getTemplates (err, templates) ->
-            if err then return done(err)
+    it 'Should load the default theme', ->
+        theme = aglio.getTheme 'default'
 
-            assert templates.length
-            done()
-
-    it 'Should handle template list error', (done) ->
-        sinon.stub fs, 'readdir', (name, callback) ->
-            callback 'error'
-
-        aglio.getTemplates (err, templates) ->
-            assert err
-
-            fs.readdir.restore()
-
-            done()
+        assert.ok theme
 
     it 'Should get a list of included files', ->
         sinon.stub fs, 'readFileSync', -> 'I am a test file'
 
         input = '''
             # Title
-            <!-- include(test1.md) -->
+            <!-- include(test1.apib) -->
             Some content...
-            <!-- include(test2.md) -->
+            <!-- include(test2.apib) -->
             More content...
         '''
 
@@ -47,8 +33,8 @@ describe 'API Blueprint Renderer', ->
         fs.readFileSync.restore()
 
         assert.equal paths.length, 2
-        assert 'test1.md' in paths
-        assert 'test2.md' in paths
+        assert 'test1.apib' in paths
+        assert 'test2.apib' in paths
 
     it 'Should render blank string', (done) ->
         aglio.render '', template: 'default', locals: {foo: 1}, (err, html) ->
@@ -74,7 +60,7 @@ describe 'API Blueprint Renderer', ->
         aglio.render temp, 'default', done
 
     it 'Should render a custom template by filename', (done) ->
-        template = path.join(root, 'templates', 'default.jade')
+        template = path.join(root, 'test', 'test.jade')
         aglio.render '# Blueprint', template, (err, html) ->
             if err then return done(err)
 
@@ -94,7 +80,7 @@ describe 'API Blueprint Renderer', ->
             done()
 
     it 'Should render from/to files', (done) ->
-        src = path.join root, 'example.md'
+        src = path.join root, 'example.apib'
         dest = path.join root, 'example.html'
         aglio.renderFile src, dest, {}, done
 
@@ -108,13 +94,46 @@ describe 'API Blueprint Renderer', ->
 
             assert process.stdin.read.called
             process.stdin.read.restore()
+            process.stdin.removeAllListeners()
 
             done()
 
     it 'Should render to stdout', (done) ->
         sinon.stub console, 'log'
 
-        aglio.renderFile path.join(root, 'example.md'), '-', 'default', (err) ->
+        aglio.renderFile path.join(root, 'example.apib'), '-', 'default', (err) ->
+            if err
+                console.log.restore()
+                return done(err)
+
+            assert console.log.called
+            console.log.restore()
+
+            done()
+
+    it 'Should compile from/to files', (done) ->
+        src = path.join root, 'example.apib'
+        dest = path.join root, 'example-compiled.apib'
+        aglio.compileFile src, dest, done
+
+    it 'Should compile from stdin', (done) ->
+        sinon.stub process.stdin, 'read', -> '# Hello\n'
+
+        setTimeout -> process.stdin.emit 'readable', 1
+
+        aglio.compileFile '-', 'example-compiled.apib', (err) ->
+            if err then return done(err)
+
+            assert process.stdin.read.called
+            process.stdin.read.restore()
+            process.stdin.removeAllListeners()
+
+            done()
+
+    it 'Should compile to stdout', (done) ->
+        sinon.stub console, 'log'
+
+        aglio.compileFile path.join(root, 'example.apib'), '-', (err) ->
             if err then return done(err)
 
             assert console.log.called
@@ -122,11 +141,21 @@ describe 'API Blueprint Renderer', ->
 
             done()
 
+    it 'Should support legacy theme names', (done) ->
+        aglio.render '', template: 'flatly', (err, html) ->
+            if err then return done(err)
+
+            assert html
+
+            done()
+
     it 'Should error on missing input file', (done) ->
         aglio.renderFile 'missing', 'output.html', 'default', (err, html) ->
             assert err
 
-            done()
+            aglio.compileFile 'missing', 'output.apib', (err) ->
+                assert err
+                done()
 
     it 'Should error on bad template', (done) ->
         aglio.render blueprint, 'bad', (err, html) ->
@@ -134,8 +163,8 @@ describe 'API Blueprint Renderer', ->
 
             done()
 
-    it 'Should error on protagonist failure', (done) ->
-        sinon.stub protagonist, 'parse', (content, callback) ->
+    it 'Should error on drafter failure', (done) ->
+        sinon.stub protagonist, 'parse', (content, options, callback) ->
             callback 'error'
 
         aglio.render blueprint, 'default', (err, html) ->
@@ -171,7 +200,7 @@ describe 'API Blueprint Renderer', ->
         sinon.stub aglio, 'render', (content, template, callback) ->
             callback 'error'
 
-        aglio.renderFile path.join(root, 'example.md'), 'bar', 'default', (err, html) ->
+        aglio.renderFile path.join(root, 'example.apib'), 'bar', 'default', (err, html) ->
             assert err
 
             aglio.render.restore()
@@ -179,12 +208,14 @@ describe 'API Blueprint Renderer', ->
             done()
 
 describe 'Executable', ->
-    it 'Should list templates', (done) ->
+    it 'Should print a version', (done) ->
         sinon.stub console, 'log'
 
-        bin.run l: true, ->
+        bin.run version: true, (err) ->
+            assert console.log.args[0][0].match /aglio \d+/
+            assert console.log.args[1][0].match /olio \d+/
             console.log.restore()
-            done()
+            done(err)
 
     it 'Should render a file', (done) ->
         sinon.stub console, 'error'
@@ -208,9 +239,17 @@ describe 'Executable', ->
         bin.run {}, (err) ->
             assert err
 
-        bin.run i: path.join(root, 'example.md'), o: '-', ->
+        bin.run i: path.join(root, 'example.apib'), o: '-', ->
             console.error.restore()
             aglio.renderFile.restore()
+            done()
+
+    it 'Should compile a file', (done) ->
+        sinon.stub aglio, 'compileFile', (i, o, callback) ->
+            callback null
+
+        bin.run c: 1, i: path.join(root, 'example.apib'), o: '-', ->
+            aglio.compileFile.restore()
             done()
 
     it 'Should start a live preview server', (done) ->
@@ -221,6 +260,7 @@ describe 'Executable', ->
 
         sinon.stub http, 'createServer', (handler) ->
             listen: (port, host, cb) ->
+                console.log 'calling listen'
                 # Simulate requests
                 req =
                     url: '/favicon.ico'
@@ -236,9 +276,9 @@ describe 'Executable', ->
                     end: (data) ->
                         aglio.render.restore()
                         cb()
-                        file = fs.readFileSync 'example.md', 'utf8'
+                        file = fs.readFileSync 'example.apib', 'utf8'
                         setTimeout ->
-                            fs.writeFileSync 'example.md', file, 'utf8'
+                            fs.writeFileSync 'example.apib', file, 'utf8'
                             setTimeout ->
                                 console.log.restore()
                                 done()
@@ -253,10 +293,29 @@ describe 'Executable', ->
             console.error.restore()
             assert err
 
-        bin.run i: path.join(root, 'example.md'), s: true, p: 3000, h: 'localhost', ->
-            http.createServer.restore()
+            bin.run i: path.join(root, 'example.apib'), s: true, p: 3000, h: 'localhost', (err) ->
+                assert.equal err, null
+                http.createServer.restore()
 
-    it 'Should handle errors', (done) ->
+    it 'Should support custom Jade template shortcut', (done) ->
+        sinon.stub console, 'log'
+
+        bin.run i: path.join(root, 'example.apib'), t: 'test.jade', o: '-', (err) ->
+            console.log.restore()
+            done(err)
+
+    it 'Should handle theme load errors', (done) ->
+        sinon.stub console, 'error'
+        sinon.stub aglio, 'getTheme', ->
+            throw new Error('Could not load theme')
+
+        bin.run template: 'invalid', (err) ->
+            console.error.restore()
+            aglio.getTheme.restore()
+            assert err
+            done()
+
+    it 'Should handle rendering errors', (done) ->
         sinon.stub aglio, 'renderFile', (i, o, t, callback) ->
             callback
                 code: 1
@@ -268,7 +327,7 @@ describe 'Executable', ->
 
         sinon.stub console, 'error'
 
-        bin.run i: path.join(root, 'example.md'), o: '-', ->
+        bin.run i: path.join(root, 'example.apib'), o: '-', ->
             assert console.error.called
 
             console.error.restore()
